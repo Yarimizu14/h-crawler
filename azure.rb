@@ -7,7 +7,7 @@ require 'selenium-webdriver'
 Capybara.run_server = false
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, {
-    debug: true,
+    debug: false,
     js_errors: false, # turn to true if raise erro on js_error
     timeout:  120
   })
@@ -26,6 +26,11 @@ end
 module Crawler
   class Azure
     include Capybara::DSL
+
+    def self.page_enjoy
+      page_enjoy_time = rand(10) + 1
+      sleep page_enjoy_time
+    end
 
     def login
       using_wait_time 5 do
@@ -55,15 +60,18 @@ module Crawler
     end
 
     def crawl
-      index = 1
       @crawls.each do |p|
         using_wait_time 5 do
           visit(p)
-          index = index + 1
-          # save_screenshot "screenshot-#{index}.png"
-          File.open("result/wantedly-#{index}.html", 'w') do |f|
-            f.puts page.html
+          Azure.page_enjoy
+          project_id = ''
+          if m = page.current_path.match(/projects\/(?<project_id>\d+)/)
+            project_id  = m[:project_id]
           end
+          # save_screenshot "screenshot-#{index}.png"
+          File.open("result/wantedly-#{project_id}.html", 'w') do |f|
+            f.puts page.html
+          end unless project_id.empty?
         end
       end
     end
