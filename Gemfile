@@ -6,3 +6,5 @@ gem "anemone"
 
 gem "capybara"
 gem "selenium-webdriver"
+gem 'poltergeist'
+

@@ -1,16 +1,27 @@
 # coding: utf-8
 require 'capybara'
 require 'capybara/dsl'
+require 'capybara/poltergeist'
 require 'selenium-webdriver'
 
 Capybara.run_server = false
-Capybara.register_driver :selenium do |app|
-  client = Selenium::WebDriver::Remote::Http::Default.new
-  client.timeout = 30 # instead of the default 60
-  Capybara::Selenium::Driver.new(app, :browser => :chrome, :driver_path => ENV['DRIVER_PATH'], args: ['--incognito'], http_client: client)
+Capybara.register_driver :poltergeist do |app|
+  Capybara::Poltergeist::Driver.new(app, {
+    debug: true,
+    js_errors: false, # turn to true if raise erro on js_error
+    timeout:  120
+  })
+  # client = Selenium::WebDriver::Remote::Http::Default.new
+  # client.timeout = 30 # instead of the default 60
+  # Capybara::Selenium::Driver.new(app, :browser => :chrome, :driver_path => ENV['DRIVER_PATH'], args: ['--incognito'], http_client: client)
 end
-Capybara.current_driver = :selenium
-Capybara.app_host = 'https://www.wantedly.com/'
+
+Capybara.configure do |config|
+  config.run_server = false
+  config.default_driver = :poltergeist
+  config.current_driver = :poltergeist
+  config.app_host = 'https://www.wantedly.com/'
+end
 
 module Crawler
   class Azure
@@ -20,7 +31,7 @@ module Crawler
       using_wait_time 5 do
         visit('')
       end
-      find('.nav .ui-show-modal').click
+      find('.nav .ui-show-modal').trigger 'click'
       within(:css, '.ui-modal-contents-inner') do
         fill_in 'user[email]', with: ENV['EMAIL']
         fill_in 'user[password]', with: ENV['PASSWORD']
