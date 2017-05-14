@@ -4,6 +4,8 @@ require 'capybara/dsl'
 require 'capybara/poltergeist'
 require 'selenium-webdriver'
 
+require_relative './model/project'
+
 Capybara.run_server = false
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, {
@@ -68,10 +70,12 @@ module Crawler
           if m = page.current_path.match(/projects\/(?<project_id>\d+)/)
             project_id  = m[:project_id]
           end
-          # save_screenshot "screenshot-#{index}.png"
+          next if project_id.empty?
           File.open("result/wantedly-#{project_id}.html", 'w') do |f|
             f.puts page.html
-          end unless project_id.empty?
+          end
+          p = Project.new
+          p.insert(project_id)
         end
       end
     end
