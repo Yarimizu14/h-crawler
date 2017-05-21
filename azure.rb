@@ -40,6 +40,7 @@ module Crawler
         visit('')
       end
       find('.nav .ui-show-modal').trigger 'click'
+      raise "environment variable EMAIL or PASSWORD is not defined." if ENV['EMAIL'].empty? || ENV['PASSWORD'].empty?
       within(:css, '.ui-modal-contents-inner') do
         fill_in 'user[email]', with: ENV['EMAIL']
         fill_in 'user[password]', with: ENV['PASSWORD']
