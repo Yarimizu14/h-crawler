@@ -8,4 +8,6 @@ gem "capybara"
 gem "selenium-webdriver"
 gem 'poltergeist'
 
+gem 'aws-sdk'
+
 gem 'pg'

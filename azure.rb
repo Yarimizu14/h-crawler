@@ -3,6 +3,7 @@ require 'capybara'
 require 'capybara/dsl'
 require 'capybara/poltergeist'
 require 'selenium-webdriver'
+require 'aws-sdk'
 
 require_relative './model/project'
 
@@ -57,7 +58,7 @@ module Crawler
         end
         p @projects
       end
-      @projects = @projects.first(3)
+      @projects = @projects.first(2)
       p "Index Project Listing End"
     end
 
@@ -119,6 +120,8 @@ module Crawler
     end
 
     def crawl_persons
+      s3 = Aws::S3::Client.new(region: 'ap-northeast-1')
+      @users =@users.first(2)
       @users.each do |p|
         using_wait_time 5 do
           visit(p)
@@ -128,9 +131,7 @@ module Crawler
             user_id  = m[:user_id]
           end
           next if user_id.empty?
-          File.open("result/wantedly-user-#{user_id}.html", 'w') do |f|
-            f.puts page.html
-          end
+          s3.put_object(bucket: 'hr-analysis-w', key: "html/user-#{user_id}.html", body: page.html)
         end
       end
     end
