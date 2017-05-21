@@ -47,22 +47,22 @@ module Crawler
       save_screenshot 'screenshot.png'
     end
 
-    def ff
+    def find_projects
       p "Index Project Listing Start"
-      @crawls = []
+      @projects = []
       within(:css, '#container #main #project-index .projects-index-list') do
-        index = 1
         all('article').each do |a|
           href = a.find('.project-title a')[:href]
-          @crawls.push href if href
+          @projects.push href if href
         end
-        p @crawls
+        p @projects
       end
+      @projects = @projects.first(3)
       p "Index Project Listing End"
     end
 
     def crawl
-      @crawls.each do |p|
+      @projects.each do |p|
         using_wait_time 5 do
           visit(p)
           Azure.page_enjoy
@@ -79,10 +79,66 @@ module Crawler
         end
       end
     end
+
+    def find_persons
+      @users = []
+      @projects.each do |p|
+        using_wait_time 5 do
+          visit(p)
+          Azure.page_enjoy
+          find(:xpath, '//*[@id="project-show-header"]/div[1]/hgroup/h2/a').trigger 'click'
+          Azure.page_enjoy
+          company_name = ''
+          p "page.current_path ========> #{page.current_path}"
+          if m = page.current_path.match(/companies\/(?<company_name>[a-zA-Z0-9]+)/)
+            company_name  = m[:company_name]
+          end
+          p "company_name ========> #{company_name}"
+          next if company_name.empty?
+          File.open("result/wantedly-company-#{company_name}.html", 'w') do |f|
+            f.puts page.html
+          end
+
+          # ========================================
+          # =============== Employee ===============
+          # ========================================
+
+          visit("#{page.current_path}/employees")
+          # find('#company-show > div.two-column.cf > div.column-main.company_show > div > div.employee-card-container').trigger 'click'
+          p "page.current_path ========> #{page.current_path}"
+          within(:css, '#company-show div.column-main.company_show div.employee-card-container') do
+            all('.user-card').each do |a|
+              href = a.find('a.wt-user')[:href]
+              p "href ========> #{href}"
+              @users.push href if href
+            end
+          end
+        end
+        p "users ========> #{@users}"
+      end
+    end
+
+    def crawl_persons
+      @users.each do |p|
+        using_wait_time 5 do
+          visit(p)
+          Azure.page_enjoy
+          user_id = ''
+          if m = page.current_path.match(/users\/(?<user_id>\d+)/)
+            user_id  = m[:user_id]
+          end
+          next if user_id.empty?
+          File.open("result/wantedly-user-#{user_id}.html", 'w') do |f|
+            f.puts page.html
+          end
+        end
+      end
+    end
   end
 end
 
 crawler = Crawler::Azure.new
 crawler.login
-crawler.ff
-crawler.crawl
+crawler.find_projects
+crawler.find_persons
+crawler.crawl_persons
