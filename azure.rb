@@ -7,22 +7,25 @@ require 'aws-sdk'
 
 require_relative './model/project'
 
-Capybara.run_server = false
+headless = !!ENV['HEADLESS']
+
 Capybara.register_driver :poltergeist do |app|
   Capybara::Poltergeist::Driver.new(app, {
     debug: false,
     js_errors: false, # turn to true if raise erro on js_error
     timeout:  120
   })
-  # client = Selenium::WebDriver::Remote::Http::Default.new
-  # client.timeout = 30 # instead of the default 60
-  # Capybara::Selenium::Driver.new(app, :browser => :chrome, :driver_path => ENV['DRIVER_PATH'], args: ['--incognito'], http_client: client)
+end
+
+Capybara.register_driver :selenium do |app|
+  Capybara::Selenium::Driver.new(app, browser: :chrome, driver_path:  ENV['DRIVER_PATH'], args: ['--incognito'])
 end
 
 Capybara.configure do |config|
   config.run_server = false
-  config.default_driver = :poltergeist
-  config.current_driver = :poltergeist
+  driver = headless ? :poltergeist : :selenium
+  config.default_driver = driver
+  config.current_driver = driver
   config.app_host = 'https://www.wantedly.com/'
 end
 
@@ -39,7 +42,8 @@ module Crawler
       using_wait_time 5 do
         visit('')
       end
-      find('.nav .ui-show-modal').trigger 'click'
+      # find('header .nav .ui-show-modal').trigger 'click'
+      find('header .nav .ui-show-modal').click
       raise "environment variable EMAIL or PASSWORD is not defined." if ENV['EMAIL'].empty? || ENV['PASSWORD'].empty?
       within(:css, '.ui-modal-contents-inner') do
         fill_in 'user[email]', with: ENV['EMAIL']
