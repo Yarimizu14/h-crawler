@@ -6,6 +6,8 @@ require 'selenium-webdriver'
 require 'aws-sdk'
 
 require_relative './model/project'
+require_relative './page_crawlers/top_page_crawler'
+require_relative './page_crawlers/project_page_crawler'
 
 headless = !!ENV['HEADLESS']
 
@@ -53,101 +55,20 @@ module Crawler
         fill_in 'user[password]', with: ENV['PASSWORD']
         click_on('ログイン')
       end
-      save_screenshot 'screenshot.png'
-    end
-
-    def find_projects
-      p "Index Project Listing Start"
-      @projects = []
-      within(:css, '#container #main #project-index .projects-index-list') do
-        all('article').each do |a|
-          href = a.find('.project-title a')[:href]
-          @projects.push href if href
-        end
-        p @projects
-      end
-      @projects = @projects.first(2)
-      p "Index Project Listing End"
     end
 
     def crawl
-      @projects.each do |p|
-        using_wait_time 5 do
-          visit(p)
-          Azure.page_enjoy
-          project_id = ''
-          if m = page.current_path.match(/projects\/(?<project_id>\d+)/)
-            project_id  = m[:project_id]
-          end
-          next if project_id.empty?
-          File.open("result/wantedly-#{project_id}.html", 'w') do |f|
-            f.puts page.html
-          end
-          p = Project.new
-          p.insert(project_id)
-        end
-      end
-    end
-
-    def find_persons
-      @users = []
-      @projects.each do |p|
-        using_wait_time 5 do
-          visit(p)
-          Azure.page_enjoy
-          find(:xpath, '//*[@id="project-show-header"]/div[1]/hgroup/h2/a').trigger 'click'
-          Azure.page_enjoy
-          company_name = ''
-          p "page.current_path ========> #{page.current_path}"
-          if m = page.current_path.match(/companies\/(?<company_name>[a-zA-Z0-9]+)/)
-            company_name  = m[:company_name]
-          end
-          p "company_name ========> #{company_name}"
-          next if company_name.empty?
-          File.open("result/wantedly-company-#{company_name}.html", 'w') do |f|
-            f.puts page.html
-          end
-
-          # ========================================
-          # =============== Employee ===============
-          # ========================================
-
-          visit("#{page.current_path}/employees")
-          # find('#company-show > div.two-column.cf > div.column-main.company_show > div > div.employee-card-container').trigger 'click'
-          p "page.current_path ========> #{page.current_path}"
-          within(:css, '#company-show div.column-main.company_show div.employee-card-container') do
-            all('.user-card').each do |a|
-              href = a.find('a.wt-user')[:href]
-              p "href ========> #{href}"
-              @users.push href if href
-            end
-          end
-        end
-        p "users ========> #{@users}"
-      end
-    end
-
-    def crawl_persons
-      s3 = Aws::S3::Client.new(region: 'ap-northeast-1')
-      @users =@users.first(2)
-      @users.each do |p|
-        using_wait_time 5 do
-          visit(p)
-          Azure.page_enjoy
-          user_id = ''
-          if m = page.current_path.match(/users\/(?<user_id>\d+)/)
-            user_id  = m[:user_id]
-          end
-          next if user_id.empty?
-          s3.put_object(bucket: 'hr-analysis-w', key: "html/user-#{user_id}.html", body: page.html)
-        end
-      end
+      top_crawler = Crawler::TopPageCrawler.new
+      project_crawler = top_crawler.visit_first_project
+      p project_crawler.info
+      company_crawler = project_crawler.visit_company
+      p company_crawler.info
+      company_stat_crawler = company_crawler.visit_company_stat
+      p company_stat_crawler.info
     end
   end
 end
 
 crawler = Crawler::Azure.new
 crawler.login
-crawler.find_projects
-crawler.find_persons
-crawler.crawl_persons
+crawler.crawl
