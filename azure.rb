@@ -10,11 +10,14 @@ require_relative './model/project'
 headless = !!ENV['HEADLESS']
 
 Capybara.register_driver :poltergeist do |app|
-  Capybara::Poltergeist::Driver.new(app, {
+  driver = Capybara::Poltergeist::Driver.new(app, {
     debug: false,
     js_errors: false, # turn to true if raise erro on js_error
     timeout:  120
   })
+  ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
+  driver.headers = { 'User-Agent' => ua }
+  driver
 end
 
 Capybara.register_driver :selenium do |app|
