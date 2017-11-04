@@ -63,8 +63,12 @@ module Crawler
       p project_crawler.info
       company_crawler = project_crawler.visit_company
       p company_crawler.info
-      company_stat_crawler = company_crawler.visit_company_stat
-      p company_stat_crawler.info
+      # company_stat_crawler = company_crawler.visit_company_stat
+      # p company_stat_crawler.info
+      company_user_crawler = company_crawler.visit_company_users
+      p company_user_crawler.info
+      user_scrawler = company_user_crawler.visit_first_user
+      p user_scrawler.info
     end
   end
 end
