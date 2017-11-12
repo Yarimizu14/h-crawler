@@ -11,3 +11,5 @@ gem 'poltergeist'
 gem 'aws-sdk'
 
 gem 'pg'
+
+gem 'activerecord'
