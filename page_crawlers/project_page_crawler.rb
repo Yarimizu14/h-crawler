@@ -4,6 +4,8 @@ require 'capybara/dsl'
 
 require_relative '../page_scraper/project_page_scraper'
 require_relative './company_page_crawler'
+require_relative '../model/project.rb'
+require_relative '../model/company.rb'
 
 module Crawler
 
@@ -15,6 +17,9 @@ module Crawler
     end
 
     def save
+      info = self.info
+      p = Project.new(info)
+      p.save!
     end
 
     def visit_company

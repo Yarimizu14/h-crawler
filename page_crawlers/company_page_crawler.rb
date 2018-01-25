@@ -5,6 +5,7 @@ require 'capybara/dsl'
 require_relative '../page_scraper/company_page_scraper'
 require_relative './company_stat_page_crawler'
 require_relative './company_user_page_crawler'
+require_relative '../model/company'
 
 module Crawler
 
@@ -13,6 +14,13 @@ module Crawler
 
     def info
       @info ||= scrape_company_page(page.html, 'utf-8')
+    end
+
+    def save
+      info = self.info
+      c = Company.new(info)
+      c.save!
+      c.attributes
     end
 
     def visit_company_stat

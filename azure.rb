@@ -4,10 +4,12 @@ require 'capybara/dsl'
 require 'capybara/poltergeist'
 require 'selenium-webdriver'
 require 'aws-sdk'
+require 'active_record'
 
 require_relative './model/project'
 require_relative './page_crawlers/top_page_crawler'
 require_relative './page_crawlers/project_page_crawler'
+require_relative './db/connection'
 
 headless = !!ENV['HEADLESS']
 
@@ -47,7 +49,7 @@ module Crawler
       using_wait_time 5 do
         visit('')
       end
-      # find('header .nav .ui-show-modal').trigger 'click'
+      # find('header .nav .ui-show-modal').click 'click'
       find('header .nav .ui-show-modal').click
       raise "environment variable EMAIL or PASSWORD is not defined." if ENV['EMAIL'].empty? || ENV['PASSWORD'].empty?
       within(:css, '.ui-modal-contents-inner') do
@@ -63,6 +65,8 @@ module Crawler
       p project_crawler.info
       company_crawler = project_crawler.visit_company
       p company_crawler.info
+      p company_crawler.save
+      return
       # company_stat_crawler = company_crawler.visit_company_stat
       # p company_stat_crawler.info
       company_user_crawler = company_crawler.visit_company_users

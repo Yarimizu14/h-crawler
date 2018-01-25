@@ -4,6 +4,9 @@ require 'nokogiri'
 def scrape_project_page(file_content, charset)
   doc = Nokogiri::HTML.parse(file_content, nil, charset)
 
+  # id
+  id = doc.css('#project-show-header > div.project-show-cover-wrapper div.project-support-link.wt-ui-button.ng-isolate-scope').first&.attribute('data-project-id')&.value
+
   # title
   title = doc.css('#project-show-header > div.project-show-title-wrapper > hgroup > h1').first&.inner_text&.strip
 
@@ -17,6 +20,7 @@ def scrape_project_page(file_content, charset)
   recommendation = doc.css('#project-show-header > div.project-show-cover-wrapper > div.wt-ui-support-button > div.count.wt-support-count').first&.inner_text&.strip
 
   return {
+      id: id,
       title: title,
       total_view: total_view,
       publish_date: publish_date,

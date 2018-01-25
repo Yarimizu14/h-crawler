@@ -5,7 +5,7 @@ class CreateProjects < ActiveRecord::Migration[5.1]
         t.integer :total_view
         t.datetime :publish_date, null: false
         t.integer :recommendation
-        t.references :companies, null: false
+        t.references :company, null: false
       end
     end
 
