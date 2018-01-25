@@ -26,7 +26,7 @@ module Crawler
       # TODO: retrieve company id
       find('#project-show-header > div.project-show-title-wrapper > hgroup > h2 > a').click
       using_wait_time 10 do p "visited #{page.current_path}" end
-      CompanyPageCrawler.new
+      CompanyPageCrawler.new(nil)
     end
   end
 

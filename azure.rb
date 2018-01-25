@@ -36,6 +36,8 @@ Capybara.configure do |config|
   config.app_host = 'https://www.wantedly.com/'
 end
 
+MAX_DEPTH = 2
+
 module Crawler
   class Azure
     include Capybara::DSL
@@ -49,7 +51,6 @@ module Crawler
       using_wait_time 5 do
         visit('')
       end
-      # find('header .nav .ui-show-modal').click 'click'
       find('header .nav .ui-show-modal').click
       raise "environment variable EMAIL or PASSWORD is not defined." if ENV['EMAIL'].empty? || ENV['PASSWORD'].empty?
       within(:css, '.ui-modal-contents-inner') do
@@ -65,14 +66,38 @@ module Crawler
       p project_crawler.info
       company_crawler = project_crawler.visit_company
       p company_crawler.info
-      p company_crawler.save
+      company_stat_crawler = company_crawler.visit_company_stat
+      company_stat_crawler.each_company do |child_company|
+        ret = self.crawl_company(child_company, 0)
+        break if ret
+      end
       return
-      # company_stat_crawler = company_crawler.visit_company_stat
-      # p company_stat_crawler.info
       company_user_crawler = company_crawler.visit_company_users
       p company_user_crawler.info
       user_scrawler = company_user_crawler.visit_first_user
       p user_scrawler.info
+    end
+
+    def crawl_company(company_crawler, depth=0)
+      using_wait_time 5 do
+        company_crawler.ensure_load
+      end
+      unless company_crawler.can_save?
+        p "skipping company #{company_crawler.id} because it can not be saved"
+        return false
+      end
+      p "start to save company #{company_crawler.id}"
+      p("failed to save company #{company_crawler.id}") && return unless company_crawler.save
+      if depth > MAX_DEPTH
+        p "exiting company #{company_crawler.id} because depth exceed"
+        return false
+      end
+      depth = depth + 1
+      company_stat_crawler = company_crawler.visit_company_stat
+      company_stat_crawler.each_company do |child_company|
+        ret = self.crawl_company(child_company, depth)
+      end
+      true
     end
   end
 end

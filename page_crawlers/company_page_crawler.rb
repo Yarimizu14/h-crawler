@@ -12,15 +12,42 @@ module Crawler
   class CompanyPageCrawler
     include Capybara::DSL
 
+    attr_reader :id
+
+    def initialize(id=-1)
+      @id = id
+    end
+
     def info
       @info ||= scrape_company_page(page.html, 'utf-8')
+    rescue => e
+      p "error to scrape company #{@id} page, #{e}"
+      nil
+    end
+
+    def can_save?
+      return true if @id && !Company.exists?(@id)
+      false
+    end
+
+    def saved?
+      Company.exists?(@id)
     end
 
     def save
       info = self.info
+      return false unless info
+      info.merge!({
+        id: @id
+      })
+      p info
       c = Company.new(info)
       c.save!
-      c.attributes
+      true
+    end
+
+    def ensure_load
+      visit("/org/#{@id}")
     end
 
     def visit_company_stat
